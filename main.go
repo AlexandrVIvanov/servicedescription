@@ -35,27 +35,18 @@ func showDescription(w http.ResponseWriter, r *http.Request) {
 	strsplit := strings.Split(id,",") // разделяем по запятой 
 
 	//fmt.Println(strsplit)
-
-
 	// проходимся циклом по массиву, чтобы выцепить айди 
 	for docnumber := range strsplit {
-  	 	//fmt.Println(strsplit[docnumber])
+  	 	
+		filename :=string("service/"+strsplit[docnumber]+".txt")
 
-  	 	filename :=string("service/"+strsplit[docnumber]+".txt")
-
-  	 	file, err := os.Open(filename)
+  	 	content, err := os.ReadFile(filename)
     	if err != nil {
-        	log.Fatal(err)
-        	//w.Write([]byte(""))
-   		 }
-    	defer func() {
-        	if err = file.Close(); err != nil {
-            	log.Fatal(err)
-       		}
-   		}()
- 		b, err := os.ReadFile(file)
-  		w.Write([]byte(b))
-	 }
+        	w.Write([]byte("Услуга не найдена"))
+   		 } else {
+			w.Write([]byte(content))
+		 }
+ 	 }
 
 
 
