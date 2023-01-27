@@ -8,20 +8,6 @@ import (
 	"strings" // сплитим адрес для айдишников 
 	"os"
 )
-
-
-
-// type Docs struct {
-
-// 	Doc_Id int 
-
-// 	Text string 
-// }
-
-
-
-
-
  
 func home(w http.ResponseWriter, r *http.Request) {
 	// Проверяется, если текущий путь URL запроса точно совпадает с шаблоном "/". Если нет, вызывается
