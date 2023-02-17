@@ -2,15 +2,20 @@ package main
 
 import (
 	"bufio"
+	"encoding/base64"
+	"encoding/json"
 	"path/filepath"
-
 	//"fmt"
 	"log"
 	"net/http"
 	"os"
-	//"strconv"
 	"strings" // сплитим адрес для айдишников
 )
+
+type TypeDescription struct {
+	IdText string
+	Text   string
+}
 
 var template1, template2 []string
 
@@ -86,6 +91,51 @@ func showDescription(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+func WriteDescriptionFile(id string, text []byte) {
+	filename := filepath.Join("service", id+".txt")
+	err := os.WriteFile(filename, text, 0666)
+	if err != nil {
+		log.Println("Error writing file " + filename)
+		return
+	}
+}
+
+// Обработчик для записи заметки в вебсервис
+// формат тело запроса JSON
+// {id :  number id service must by int
+//  text: base64 string }
+
+func writeDescription(w http.ResponseWriter, r *http.Request) {
+	var d TypeDescription
+	if r.Method == "POST" {
+
+		//read body request 1MB max
+		r.Body = http.MaxBytesReader(w, r.Body, 1048576)
+		dec := json.NewDecoder(r.Body)
+		//dec.DisallowUnknownFields()
+
+		err := dec.Decode(&d)
+		if err != nil {
+			msg := "Error request body"
+			http.Error(w, msg, http.StatusBadRequest)
+		}
+		id := d.IdText
+		text, err := base64.StdEncoding.DecodeString(d.Text)
+		if err != nil {
+			msg := "Error Decode Base64 field test"
+			http.Error(w, msg, http.StatusBadRequest)
+		}
+
+		WriteDescriptionFile(id, text)
+
+	} else {
+
+		http.Error(w, "Bad request", http.StatusBadRequest)
+		return
+	}
+
+}
+
 func main() {
 
 	template1, _ = readLines("template.html")
@@ -93,6 +143,7 @@ func main() {
 
 	mux := http.NewServeMux()
 	mux.HandleFunc("/description", showDescription)
+	mux.HandleFunc("/writedesription", writeDescription)
 
 	log.Println("Запуск веб-сервера на http://127.0.0.1:8080(locallhost)")
 	err := http.ListenAndServe(":8080", mux)
