@@ -60,7 +60,7 @@ func showDescription(w http.ResponseWriter, r *http.Request) {
 
 	//fmt.Println(strsplit)
 	// проходимся циклом по массиву, чтобы выцепить айди
-	outputstrings = append(template1)
+	outputstrings = template1
 	for number := range strsplit {
 
 		filename := filepath.Join("service", strsplit[number]+".txt")
