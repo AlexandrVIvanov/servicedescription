@@ -25,12 +25,13 @@ var template1, template2 []string
 func readLines(path string) ([]string, error) {
 	file, err := os.Open(path)
 	if err != nil {
+		log.Println("Error",err.Error())
 		return nil, err
 	}
 	defer func(file *os.File) {
 		err := file.Close()
 		if err != nil {
-
+			log.Println("Error",err.Error())
 		}
 	}(file)
 
