@@ -159,7 +159,8 @@ func main() {
 		" POST: /writedesription  - Добавление или обновление описания услуги \n" +
 		"  BODY request (json): \n" +
 		"	{\"IdText\" : \"id вида услуги \", \n" +
-		"	\"Text\": \" текст описания услуги закодированые в BASE64 \"}"
+		"	\"Text\": \" текст описания услуги закодированые в BASE64 \"}\n" +
+		"\nsource URL: https://github.com/AlexandrVIvanov/servicedescription"
 
 	log.Println(text)
 	err := http.ListenAndServe(":8431", mux)
