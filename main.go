@@ -50,6 +50,7 @@ func showDescription(w http.ResponseWriter, r *http.Request) {
 	var outputstrings []string
 	var outputbyte []byte
 
+	log.Println(r.RemoteAddr, r.RequestURI)
 	id := r.URL.Query().Get("id") // получаем строку с айдишками
 
 	//fmt.Println(id)
@@ -87,6 +88,7 @@ func showDescription(w http.ResponseWriter, r *http.Request) {
 
 	_, err := w.Write(outputbyte)
 	if err != nil {
+		log.Println("Error", err.Error())
 		return
 	}
 }
@@ -108,28 +110,32 @@ func WriteDescriptionFile(id string, text []byte) {
 func writeDescription(w http.ResponseWriter, r *http.Request) {
 	var d TypeDescription
 	if r.Method == "POST" {
+		log.Println(r.RemoteAddr, r.RequestURI)
 
 		//read body request 1MB max
 		r.Body = http.MaxBytesReader(w, r.Body, 1048576)
 		dec := json.NewDecoder(r.Body)
-		//dec.DisallowUnknownFields()
+		dec.DisallowUnknownFields()
 
 		err := dec.Decode(&d)
 		if err != nil {
 			msg := "Error request body"
 			http.Error(w, msg, http.StatusBadRequest)
+			log.Println("Error", err.Error())
+			return
 		}
 		id := d.IdText
 		text, err := base64.StdEncoding.DecodeString(d.Text)
 		if err != nil {
 			msg := "Error Decode Base64 field test"
 			http.Error(w, msg, http.StatusBadRequest)
+			log.Println("Error", err.Error())
+			return
 		}
 
 		WriteDescriptionFile(id, text)
 
 	} else {
-
 		http.Error(w, "Bad request", http.StatusBadRequest)
 		return
 	}
@@ -138,14 +144,24 @@ func writeDescription(w http.ResponseWriter, r *http.Request) {
 
 func main() {
 
-	template1, _ = readLines("template.html")
-	template2, _ = readLines("template2.html")
+	template1, _ = readLines(filepath.Join("templates", "template.html"))
+	template2, _ = readLines(filepath.Join("templates", "template2.html"))
 
 	mux := http.NewServeMux()
 	mux.HandleFunc("/description", showDescription)
 	mux.HandleFunc("/writedesription", writeDescription)
 
-	log.Println("Запуск веб-сервера на http://127.0.0.1:8080(locallhost)")
-	err := http.ListenAndServe(":8080", mux)
+	text := "Запуск веб-сервера на http://127.0.0.1:8431(locallhost)\n" +
+		"Сервисы\n" +
+		" GET: /descrption?id=xx,yy - Возвращает страницу с описанием услуг\n" +
+		" xx,yy - id (int) вида услуги\n" +
+		"\n" +
+		" POST: /writedesription  - Добавление или обновление описания услуги \n" +
+		"  BODY request (json): \n" +
+		"	{\"IdText\" : \"id вида услуги \", \n" +
+		"	\"Text\": \" текст описания услуги закодированые в BASE64 \"}"
+
+	log.Println(text)
+	err := http.ListenAndServe(":8431", mux)
 	log.Fatal(err)
 }
