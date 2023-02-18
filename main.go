@@ -151,7 +151,7 @@ func main() {
 	mux.HandleFunc("/description", showDescription)
 	mux.HandleFunc("/writedesription", writeDescription)
 
-	text := "Запуск веб-сервера на http://127.0.0.1:8431(locallhost)\n" +
+	text := "Запуск веб-сервера на http://127.0.0.1:8431\n" +
 		"Сервисы\n" +
 		" GET: /descrption?id=xx,yy - Возвращает страницу с описанием услуг\n" +
 		" xx,yy - id (int) вида услуги\n" +
