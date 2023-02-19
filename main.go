@@ -25,12 +25,13 @@ var template1, template2 []string
 func readLines(path string) ([]string, error) {
 	file, err := os.Open(path)
 	if err != nil {
+		log.Println("Error",err.Error())
 		return nil, err
 	}
 	defer func(file *os.File) {
 		err := file.Close()
 		if err != nil {
-
+			log.Println("Error",err.Error())
 		}
 	}(file)
 
@@ -59,7 +60,7 @@ func showDescription(w http.ResponseWriter, r *http.Request) {
 
 	//fmt.Println(strsplit)
 	// проходимся циклом по массиву, чтобы выцепить айди
-	outputstrings = append(template1)
+	outputstrings = template1
 	for number := range strsplit {
 
 		filename := filepath.Join("service", strsplit[number]+".txt")
@@ -151,7 +152,7 @@ func main() {
 	mux.HandleFunc("/description", showDescription)
 	mux.HandleFunc("/writedesription", writeDescription)
 
-	text := "Запуск веб-сервера на http://127.0.0.1:8431(locallhost)\n" +
+	text := "Запуск веб-сервера на http://127.0.0.1:8431\n" +
 		"Сервисы\n" +
 		" GET: /descrption?id=xx,yy - Возвращает страницу с описанием услуг\n" +
 		" xx,yy - id (int) вида услуги\n" +
