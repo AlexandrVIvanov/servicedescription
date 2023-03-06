@@ -25,13 +25,13 @@ var template1, template2 []string
 func readLines(path string) ([]string, error) {
 	file, err := os.Open(path)
 	if err != nil {
-		log.Println("Error",err.Error())
+		log.Println("Error", err.Error())
 		return nil, err
 	}
 	defer func(file *os.File) {
 		err := file.Close()
 		if err != nil {
-			log.Println("Error",err.Error())
+			log.Println("Error", err.Error())
 		}
 	}(file)
 
@@ -50,6 +50,7 @@ func showDescription(w http.ResponseWriter, r *http.Request) {
 	// конвертировать в integer, или значение меньше 1, возвращаем ответ
 	var outputstrings []string
 	var outputbyte []byte
+	//var itsBe map[string]bool
 
 	log.Println(r.RemoteAddr, r.RequestURI)
 	id := r.URL.Query().Get("id") // получаем строку с айдишками
@@ -58,10 +59,16 @@ func showDescription(w http.ResponseWriter, r *http.Request) {
 
 	strsplit := strings.Split(id, ",") // разделяем по запятой
 
+	itsBe := make(map[string]bool)
 	//fmt.Println(strsplit)
 	// проходимся циклом по массиву, чтобы выцепить айди
 	outputstrings = template1
 	for number := range strsplit {
+
+		//ищем может уже выводили текст для этого номера?
+		if itsBe[strsplit[number]] {
+			continue
+		}
 
 		filename := filepath.Join("service", strsplit[number]+".txt")
 		content, err := readLines(filename)
@@ -79,6 +86,8 @@ func showDescription(w http.ResponseWriter, r *http.Request) {
 		outputstrings = append(outputstrings, "<section>")
 		outputstrings = append(outputstrings, content...)
 		outputstrings = append(outputstrings, "</section>")
+
+		itsBe[strsplit[number]] = true
 	}
 
 	outputstrings = append(outputstrings, template2...)
@@ -145,6 +154,9 @@ func writeDescription(w http.ResponseWriter, r *http.Request) {
 
 func main() {
 
+	for i := 1; i < len(os.Args); i++ {
+		log.Println(os.Args[i])
+	}
 	template1, _ = readLines(filepath.Join("templates", "template.html"))
 	template2, _ = readLines(filepath.Join("templates", "template2.html"))
 
@@ -152,7 +164,7 @@ func main() {
 	mux.HandleFunc("/description", showDescription)
 	mux.HandleFunc("/writedesription", writeDescription)
 
-	text := "Запуск веб-сервера на http://127.0.0.1:8431\n" +
+	text := "\nЗапуск веб-сервера на http://127.0.0.1:8431\n" +
 		"Сервисы\n" +
 		" GET: /descrption?id=xx,yy - Возвращает страницу с описанием услуг\n" +
 		" xx,yy - id (int) вида услуги\n" +
