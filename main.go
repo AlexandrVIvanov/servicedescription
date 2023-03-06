@@ -4,7 +4,10 @@ import (
 	"bufio"
 	"encoding/base64"
 	"encoding/json"
+	"flag"
 	"path/filepath"
+	"strconv"
+
 	//"fmt"
 	"log"
 	"net/http"
@@ -17,7 +20,10 @@ type TypeDescription struct {
 	Text   string
 }
 
-var template1, template2 []string
+var (
+	template1, template2 []string
+	port                 *int
+)
 
 // Description: readLines -
 // в Го файлы читаются в []byte
@@ -152,11 +158,16 @@ func writeDescription(w http.ResponseWriter, r *http.Request) {
 
 }
 
+func init() {
+	port = flag.Int("p", 8134, "Port service")
+}
+
 func main() {
 
-	for i := 1; i < len(os.Args); i++ {
-		log.Println(os.Args[i])
-	}
+	println("Help comandline arguments run: \n\tservicedescription -p PORT")
+
+	flag.Parse()
+
 	template1, _ = readLines(filepath.Join("templates", "template.html"))
 	template2, _ = readLines(filepath.Join("templates", "template2.html"))
 
@@ -164,7 +175,9 @@ func main() {
 	mux.HandleFunc("/description", showDescription)
 	mux.HandleFunc("/writedesription", writeDescription)
 
-	text := "\nЗапуск веб-сервера на http://127.0.0.1:8431\n" +
+	strport := strconv.Itoa(*port)
+
+	text := "\nЗапуск веб-сервера на http://127.0.0.1:" + strport + "\n" +
 		"Сервисы\n" +
 		" GET: /descrption?id=xx,yy - Возвращает страницу с описанием услуг\n" +
 		" xx,yy - id (int) вида услуги\n" +
@@ -176,6 +189,6 @@ func main() {
 		"\nsource URL: https://github.com/AlexandrVIvanov/servicedescription"
 
 	log.Println(text)
-	err := http.ListenAndServe(":8431", mux)
+	err := http.ListenAndServe(":"+strport, mux)
 	log.Fatal(err)
 }
