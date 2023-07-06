@@ -7,8 +7,6 @@ import (
 	"flag"
 	"path/filepath"
 	"strconv"
-
-	//"fmt"
 	"log"
 	"net/http"
 	"os"
