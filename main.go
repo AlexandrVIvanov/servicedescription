@@ -5,11 +5,11 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"flag"
-	"path/filepath"
-	"strconv"
 	"log"
 	"net/http"
 	"os"
+	"path/filepath"
+	"strconv"
 	"strings" // сплитим адрес для айдишников
 )
 
@@ -156,6 +156,11 @@ func writeDescription(w http.ResponseWriter, r *http.Request) {
 
 }
 
+// добавил функцию для поиска серийных номеров. На вход подается /searchsn?sn=...
+func searchSN(w http.ResponseWriter, r *http.Request) {
+
+}
+
 func init() {
 	port = flag.Int("p", 8134, "Port service")
 }
@@ -172,6 +177,7 @@ func main() {
 	mux := http.NewServeMux()
 	mux.HandleFunc("/description", showDescription)
 	mux.HandleFunc("/writedesription", writeDescription)
+	mux.HandleFunc("/searchsn", searchSN)
 
 	strport := strconv.Itoa(*port)
 
@@ -184,7 +190,12 @@ func main() {
 		"  BODY request (json): \n" +
 		"	{\"IdText\" : \"id вида услуги \", \n" +
 		"	\"Text\": \" текст описания услуги закодированые в BASE64 \"}\n" +
-		"\nsource URL: https://github.com/AlexandrVIvanov/servicedescription"
+		"\nsource URL: https://github.com/AlexandrVIvanov/servicedescription" +
+		"\n" +
+		"\nGET: /searchsn?sn=... - Возвращает " +
+		"\n BODY request (json) \n" +
+		"   {\"sn\": SN," +
+		"    \"DateImport\": Дата производства}\n"
 
 	log.Println(text)
 	err := http.ListenAndServe(":"+strport, mux)
