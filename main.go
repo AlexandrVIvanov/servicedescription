@@ -157,8 +157,25 @@ func writeDescription(w http.ResponseWriter, r *http.Request) {
 }
 
 // добавил функцию для поиска серийных номеров. На вход подается /searchsn?sn=...
-func searchSN(w http.ResponseWriter, r *http.Request) {
+func searchsn(w http.ResponseWriter, r *http.Request) {
+	if r.Method == "GET" {
+		log.Println(r.RemoteAddr, r.RequestURI)
+		sn := r.URL.Query().Get("sn")
+		if sn == "" {
+			http.Error(w, "Bad request", http.StatusBadRequest)
+			return
+		}
 
+		searchIntoBase(sn)
+
+	} else {
+		http.Error(w, "Bad request", http.StatusBadRequest)
+		return
+	}
+}
+
+func searchIntoBase(sn string) {
+	log.Println(sn)
 }
 
 func init() {
@@ -177,7 +194,7 @@ func main() {
 	mux := http.NewServeMux()
 	mux.HandleFunc("/description", showDescription)
 	mux.HandleFunc("/writedesription", writeDescription)
-	mux.HandleFunc("/searchsn", searchSN)
+	mux.HandleFunc("/search", searchsn)
 
 	strport := strconv.Itoa(*port)
 
@@ -194,7 +211,7 @@ func main() {
 		"\n" +
 		"\nGET: /searchsn?sn=... - Возвращает " +
 		"\n BODY request (json) \n" +
-		"   {\"sn\": SN," +
+		"   {\"sn\": SN,\n" +
 		"    \"DateImport\": Дата производства}\n"
 
 	log.Println(text)
