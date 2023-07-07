@@ -2,16 +2,29 @@ package main
 
 import (
 	"bufio"
+	"context"
+	"database/sql"
 	"encoding/base64"
 	"encoding/json"
 	"flag"
+	"fmt"
+	_ "github.com/microsoft/go-mssqldb"
 	"log"
 	"net/http"
 	"os"
 	"path/filepath"
 	"strconv"
-	"strings" // сплитим адрес для айдишников
+	"strings"
 )
+
+var db *sql.DB
+
+var server = "app01"
+var portdb = 1433
+var user = "DBQlik"
+var password = "Yfcnhjqrf48"
+var database = "DBQlik-log-xml"
+var err error
 
 type TypeDescription struct {
 	IdText string
@@ -174,8 +187,29 @@ func searchsn(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func searchIntoBase(sn string) {
+func searchIntoBase(sn string) string {
+
+	connString := fmt.Sprintf("server=%s;user id=%s;password=%s;port=%d;database=%s;",
+		server, user, password, portdb, database)
+
+	// Create connection pool
+	db, err = sql.Open("sqlserver", connString)
+	if err != nil {
+		log.Println("Error creating connection pool: ", err.Error())
+		return ""
+	}
+
+	ctx := context.Background()
+	err = db.PingContext(ctx)
+	if err != nil {
+		log.Println(err.Error())
+		return ""
+	}
+	fmt.Printf("Connected!\n")
+
 	log.Println(sn)
+
+	return ""
 }
 
 func init() {
