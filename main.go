@@ -15,6 +15,7 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
+	"time"
 )
 
 var db *sql.DB
@@ -179,7 +180,21 @@ func searchsn(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		searchIntoBase(sn)
+		ret, err := searchIntoBase(sn)
+		if err != nil {
+			http.Error(w, "Internal error", http.StatusInternalServerError)
+			return
+		}
+
+		log.Println(ret)
+
+		w.WriteHeader(http.StatusCreated)
+		w.Header().Set("Content-Type", "application/json")
+		_, err = w.Write(ret)
+		if err != nil {
+			return
+		}
+		return
 
 	} else {
 		http.Error(w, "Bad request", http.StatusBadRequest)
@@ -187,7 +202,63 @@ func searchsn(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func searchIntoBase(sn string) string {
+func readsnFromBase(sn string) ([]byte, error) {
+	var findsn string
+	var finddate time.Time
+
+	type retType struct {
+		Id         string
+		DateImport string
+	}
+
+	var ret retType
+
+	ctx := context.Background()
+
+	// Check if database is alive.
+	err := db.PingContext(ctx)
+	if err != nil {
+		return []byte("error"), err
+	}
+
+	tsql := fmt.Sprintf("SELECT [sn], [importdate] FROM [DBQlik-log-xml].[dbo].[sntable] where sn=@sn;")
+
+	// Execute query
+	rows, err := db.QueryContext(ctx, tsql, sql.Named("sn", sn))
+	if err != nil {
+		return []byte("error"), err
+	}
+
+	defer func(rows *sql.Rows) {
+		err := rows.Close()
+		if err != nil {
+			log.Println("Error close connection: ", err.Error())
+		}
+	}(rows)
+
+	retDateImport := ""
+
+	for rows.Next() {
+
+		// Get values from row.
+		err := rows.Scan(&findsn, &finddate)
+		if err != nil {
+			return []byte("error"), err
+		}
+		ss, _ := finddate.MarshalJSON()
+		retDateImport = string(ss)
+
+	}
+
+	ret.Id = sn
+	ret.DateImport = retDateImport
+
+	retjson, _ := json.Marshal(ret)
+
+	return retjson, nil
+}
+
+func searchIntoBase(sn string) ([]byte, error) {
 
 	connString := fmt.Sprintf("server=%s;user id=%s;password=%s;port=%d;database=%s;",
 		server, user, password, portdb, database)
@@ -196,20 +267,26 @@ func searchIntoBase(sn string) string {
 	db, err = sql.Open("sqlserver", connString)
 	if err != nil {
 		log.Println("Error creating connection pool: ", err.Error())
-		return ""
+		return []byte(""), err
 	}
 
 	ctx := context.Background()
 	err = db.PingContext(ctx)
 	if err != nil {
 		log.Println(err.Error())
-		return ""
+		return []byte(""), err
 	}
 	fmt.Printf("Connected!\n")
 
 	log.Println(sn)
 
-	return ""
+	answer, err := readsnFromBase(sn)
+
+	if err != nil {
+		log.Println(err.Error())
+		return []byte(""), err
+	}
+	return answer, nil
 }
 
 func init() {
@@ -245,7 +322,7 @@ func main() {
 		"\n" +
 		"\nGET: /searchsn?sn=... - Возвращает " +
 		"\n BODY request (json) \n" +
-		"   {\"sn\": SN,\n" +
+		"   {\"Id\": SN,\n" +
 		"    \"DateImport\": Дата производства}\n"
 
 	log.Println(text)
