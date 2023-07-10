@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"strings"
 	"time"
 )
 
@@ -96,7 +97,7 @@ func readsnFromBase(sn string) ([]byte, error) {
 		}
 		ss, _ := finddate.MarshalJSON()
 		retDateImport = string(ss)
-
+		retDateImport = strings.Replace(retDateImport, "\"", "", -1)
 	}
 
 	ret.Id = sn
