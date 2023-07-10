@@ -35,7 +35,7 @@ func Searchsn(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		log.Println(ret)
+		log.Println(string(ret))
 
 		w.WriteHeader(http.StatusOK)
 		w.Header().Set("Content-Type", "application/json")
