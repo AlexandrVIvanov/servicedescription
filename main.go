@@ -188,7 +188,7 @@ func searchsn(w http.ResponseWriter, r *http.Request) {
 
 		log.Println(ret)
 
-		w.WriteHeader(http.StatusCreated)
+		w.WriteHeader(http.StatusOK)
 		w.Header().Set("Content-Type", "application/json")
 		_, err = w.Write(ret)
 		if err != nil {
