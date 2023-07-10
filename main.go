@@ -2,7 +2,7 @@ package main
 
 import (
 	"flag"
-	_ "github.com/microsoft/go-mssqldb"
+	//_ "github.com/microsoft/go-mssqldb"
 	"log"
 	"main/src/description"
 	"main/src/searchsn"
