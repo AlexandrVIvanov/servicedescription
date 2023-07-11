@@ -17,7 +17,7 @@ var (
 )
 
 func init() {
-	port = flag.Int("p", 8134, "Port service")
+	port = flag.Int("p", 8431, "Port service")
 }
 
 func main() {
