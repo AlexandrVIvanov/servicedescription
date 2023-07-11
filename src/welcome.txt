@@ -1,6 +1,6 @@
 Сomandline arguments run:
     servicedescription -p PORT"
-    PORT - порт запуска сервиса по умолчанию 8134
+    PORT - порт запуска сервиса по умолчанию 8431
 
 Запуск веб-сервера на http://127.0.0.1:%s
     Сервисы
