@@ -55,10 +55,18 @@ func Searchsn(w http.ResponseWriter, r *http.Request) {
 func readsnFromBase(sn string) ([]byte, error) {
 	var findsn string
 	var finddate time.Time
+	var exportdate time.Time
+	var productname string
+	var customer string
+	var code string
 
 	type retType struct {
-		Id         string
-		DateImport string
+		Id          string
+		DateImport  string
+		DateExport  string
+		Productname string
+		Customer    string
+		Code        string
 	}
 
 	var ret retType
@@ -71,7 +79,7 @@ func readsnFromBase(sn string) ([]byte, error) {
 		return []byte("error"), err
 	}
 
-	tsql := fmt.Sprintf("SELECT [sn], [importdate] FROM [DBQlik-log-xml].[dbo].[sntable] where sn=@sn;")
+	tsql := fmt.Sprintf("SELECT [sn], [importdate], [exportdate], trim([productname]), trim([customer]), trim([code]) FROM [DBQlik-log-xml].[dbo].[sntable] where sn=@sn;")
 
 	// Execute query
 	rows, err := db.QueryContext(ctx, tsql, sql.Named("sn", sn))
@@ -87,21 +95,33 @@ func readsnFromBase(sn string) ([]byte, error) {
 	}(rows)
 
 	retDateImport := ""
+	retDateExport := ""
 
-	for rows.Next() {
+	if rows.Next() {
 
 		// Get values from row.
-		err := rows.Scan(&findsn, &finddate)
+
+		err := rows.Scan(&findsn, &finddate, &exportdate, &productname, &customer, &code)
 		if err != nil {
 			return []byte("error"), err
 		}
+
 		ss, _ := finddate.MarshalJSON()
 		retDateImport = string(ss)
 		retDateImport = strings.Replace(retDateImport, "\"", "", -1)
+
+		ss, _ = exportdate.MarshalJSON()
+		retDateExport = string(ss)
+		retDateExport = strings.Replace(retDateImport, "\"", "", -1)
+
 	}
 
 	ret.Id = sn
 	ret.DateImport = retDateImport
+	ret.DateExport = retDateExport
+	ret.Customer = customer
+	ret.Productname = productname
+	ret.Code = code
 
 	retjson, _ := json.Marshal(ret)
 
