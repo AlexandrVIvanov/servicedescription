@@ -112,7 +112,7 @@ func readsnFromBase(sn string) ([]byte, error) {
 
 		ss, _ = exportdate.MarshalJSON()
 		retDateExport = string(ss)
-		retDateExport = strings.Replace(retDateImport, "\"", "", -1)
+		retDateExport = strings.Replace(retDateExport, "\"", "", -1)
 
 	}
 
