@@ -57,6 +57,7 @@ func readsnFromBase(sn string) ([]byte, error) {
 	var finddate time.Time
 	var exportdate time.Time
 	var retaildate time.Time
+	var repairdate time.Time
 	var productname string
 	var customer string
 	var code string
@@ -69,6 +70,7 @@ func readsnFromBase(sn string) ([]byte, error) {
 		Productname string
 		Customer    string
 		Code        string
+		DateRepair  string
 	}
 
 	var ret retType
@@ -81,7 +83,7 @@ func readsnFromBase(sn string) ([]byte, error) {
 		return []byte("error"), err
 	}
 
-	tsql := fmt.Sprintf("SELECT [sn], [importdate], [exportdate], trim([productname]), trim([customer]), trim([code]), trim([retaildate]) FROM [DBQlik-log-xml].[dbo].[sntable] where sn=@sn;")
+	tsql := fmt.Sprintf("SELECT [sn], [importdate], [exportdate], trim([productname]), trim([customer]), trim([code]), [retaildate], [repairdate] FROM [DBQlik-log-xml].[dbo].[sntable] where sn=@sn;")
 
 	// Execute query
 	rows, err := db.QueryContext(ctx, tsql, sql.Named("sn", sn))
@@ -99,12 +101,13 @@ func readsnFromBase(sn string) ([]byte, error) {
 	retDateImport := ""
 	retDateExport := ""
 	retDateRetail := ""
+	retDateRepair := ""
 
 	if rows.Next() {
 
 		// Get values from row.
 
-		err := rows.Scan(&findsn, &finddate, &exportdate, &productname, &customer, &code, &retaildate)
+		err := rows.Scan(&findsn, &finddate, &exportdate, &productname, &customer, &code, &retaildate, &repairdate)
 		if err != nil {
 			return []byte("error"), err
 		}
@@ -121,6 +124,9 @@ func readsnFromBase(sn string) ([]byte, error) {
 		retDateRetail = string(ss)
 		retDateRetail = strings.Replace(retDateRetail, "\"", "", -1)
 
+		ss, _ = repairdate.MarshalJSON()
+		retDateRepair = string(ss)
+		retDateRepair = strings.Replace(retDateRepair, "\"", "", -1)
 	}
 
 	ret.Id = sn
@@ -130,6 +136,7 @@ func readsnFromBase(sn string) ([]byte, error) {
 	ret.Productname = productname
 	ret.Code = code
 	ret.RetailDate = retDateRetail
+	ret.DateRepair = retDateRepair
 
 	retjson, _ := json.Marshal(ret)
 
