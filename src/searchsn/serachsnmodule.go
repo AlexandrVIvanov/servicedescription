@@ -155,6 +155,8 @@ func searchIntoBase(sn string) ([]byte, error) {
 		return []byte(""), err
 	}
 
+	defer db.Close()
+
 	ctx := context.Background()
 	err = db.PingContext(ctx)
 	if err != nil {
