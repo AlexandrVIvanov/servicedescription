@@ -16,8 +16,6 @@ type TypeDescription struct {
 	Text   string
 }
 
-var template1, template2 []string
-
 // Description: readLines -
 // в Го файлы читаются в []byte
 // чтобы перевести []bytes->[]string добавил эту функцию
@@ -49,7 +47,7 @@ func ShowDescription(w http.ResponseWriter, r *http.Request) {
 	// конвертировать в integer, или значение меньше 1, возвращаем ответ
 	var outputstrings []string
 	var outputbyte []byte
-	//var itsBe map[string]bool
+	var template1, template2 []string
 
 	if (template1 == nil) || (template2 == nil) {
 		template1, _ = ReadLines(filepath.Join("templates", "template.html"))

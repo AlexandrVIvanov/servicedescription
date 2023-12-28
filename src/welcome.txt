@@ -9,8 +9,18 @@
                 xx,yy - id (int) вида услуги
             /search?sn=серийный номер
                 - Возвращает json
-                {"Id": SN,
-		         "DateImport": Дата производства}
+                {
+                "Id": SN,
+                "IdFound": bool найден или нет SN,
+		        "DateImport": Дата производства,
+		        "DateExport": Дата отгрузки,
+		        "RetailDate": Дата продажи,
+		        "Productname": Наименование товара,
+		        "Customer": Наименование покупателя,
+		        "Code": код товара,
+		        "DateRepair": Дата ремонта,
+		        "WarrantyDate": Дата окончания гарантии
+		        }
 		POST:
 		    /writedesription  - Добавление или обновление описания услуги
                 BODY request (json):

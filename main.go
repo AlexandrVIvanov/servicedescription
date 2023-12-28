@@ -22,7 +22,7 @@ func init() {
 
 func main() {
 
-	println("Help comandline arguments run: \n\tservicedescription -p PORT")
+	//println("Help comandline arguments run: \n\tservicedescription -p PORT")
 
 	flag.Parse()
 	mux := http.NewServeMux()

@@ -69,22 +69,24 @@ func searchIntoBase(sn string) ([]byte, error) {
 		return []byte(""), err
 	}
 
-	defer func() {
-		_ = db.Close()
-	}()
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
 
-	ctx := context.Background()
-	err = db.PingContext(ctx)
-	if err != nil {
-		log.Println(err.Error())
+	if err := db.PingContext(ctx); err != nil {
 		return []byte(""), err
 	}
+	defer func() {
+		_ = db.Close()
+		cancel()
+	}()
 
-	fmt.Printf("Connected!\n")
+	//fmt.Printf("Connected!\n")
 
 	log.Println(sn)
 
 	answer, err := readsnFromBase(db, sn)
+
+	ctx.Done()
 
 	if err != nil {
 		log.Println(err.Error())
@@ -99,19 +101,22 @@ func readsnFromBase(db *sql.DB, sn string) ([]byte, error) {
 	var exportdate time.Time
 	var retaildate time.Time
 	var repairdate time.Time
+	var warrantydate time.Time
 	var productname string
 	var customer string
 	var code string
 
 	type retType struct {
-		Id          string
-		DateImport  string
-		DateExport  string
-		RetailDate  string
-		Productname string
-		Customer    string
-		Code        string
-		DateRepair  string
+		Id           string
+		IdFound      bool
+		DateImport   string
+		DateExport   string
+		RetailDate   string
+		Productname  string
+		Customer     string
+		Code         string
+		DateRepair   string
+		WarrantyDate string
 	}
 
 	var ret retType
@@ -131,7 +136,7 @@ func readsnFromBase(db *sql.DB, sn string) ([]byte, error) {
 		"trim([customer]), " +
 		"trim([code]), " +
 		"[retaildate], " +
-		"[repairdate] FROM [DBQlik-log-xml].[dbo].[sntable] where sn=@sn;"
+		"[repairdate], [warrantydate] FROM [DBQlik-log-xml].[dbo].[sntable] where sn=@sn;"
 
 	// Execute query
 	rows, err := db.QueryContext(ctx, tsql, sql.Named("sn", sn))
@@ -150,12 +155,23 @@ func readsnFromBase(db *sql.DB, sn string) ([]byte, error) {
 	retDateExport := ""
 	retDateRetail := ""
 	retDateRepair := ""
+	retDateWarranty := ""
+	retIdFound := false
 
 	if rows.Next() {
 
 		// Get values from row.
 
-		err := rows.Scan(&findsn, &finddate, &exportdate, &productname, &customer, &code, &retaildate, &repairdate)
+		err := rows.Scan(
+			&findsn,
+			&finddate,
+			&exportdate,
+			&productname,
+			&customer,
+			&code,
+			&retaildate,
+			&repairdate,
+			&warrantydate)
 		if err != nil {
 			return []byte("error"), err
 		}
@@ -175,9 +191,16 @@ func readsnFromBase(db *sql.DB, sn string) ([]byte, error) {
 		ss, _ = repairdate.MarshalJSON()
 		retDateRepair = string(ss)
 		retDateRepair = strings.Replace(retDateRepair, "\"", "", -1)
+
+		ss, _ = warrantydate.MarshalJSON()
+		retDateWarranty = string(ss)
+		retDateWarranty = strings.Replace(retDateWarranty, "\"", "", -1)
+
+		retIdFound = true
 	}
 
 	ret.Id = sn
+	ret.IdFound = retIdFound
 	ret.DateImport = retDateImport
 	ret.DateExport = retDateExport
 	ret.Customer = customer
@@ -185,6 +208,7 @@ func readsnFromBase(db *sql.DB, sn string) ([]byte, error) {
 	ret.Code = code
 	ret.RetailDate = retDateRetail
 	ret.DateRepair = retDateRepair
+	ret.WarrantyDate = retDateWarranty
 
 	retjson, _ := json.Marshal(ret)
 
