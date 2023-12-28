@@ -11,17 +11,13 @@ import (
 	"time"
 )
 
-var db *sql.DB
+// var db *sql.DB
 
-var server = "app01"
-var portdb = 1433
-var user = "DBQlik"
-var password = "Yfcnhjqrf48"
-var database = "DBQlik-log-xml"
-var err error
-
-// добавил функцию для поиска серийных номеров. На вход подается /searchsn?sn=...
+// Searchsn добавил функцию для поиска серийных номеров. На вход подается /searchsn?sn=...
 func Searchsn(w http.ResponseWriter, r *http.Request) {
+
+	start := time.Now()
+
 	if r.Method == "GET" {
 		log.Println(r.RemoteAddr, r.RequestURI)
 		sn := r.URL.Query().Get("sn")
@@ -32,11 +28,13 @@ func Searchsn(w http.ResponseWriter, r *http.Request) {
 
 		ret, err := searchIntoBase(sn)
 		if err != nil {
-			http.Error(w, "Internal error", http.StatusInternalServerError)
+			http.Error(w, "Internal error "+err.Error(), http.StatusInternalServerError)
 			return
 		}
 
 		log.Println(string(ret))
+
+		log.Printf("Время выполнения: %s", time.Since(start))
 
 		w.WriteHeader(http.StatusOK)
 		w.Header().Set("Content-Type", "application/json")
@@ -52,7 +50,50 @@ func Searchsn(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func readsnFromBase(sn string) ([]byte, error) {
+func searchIntoBase(sn string) ([]byte, error) {
+	var server = "app01"
+	var portdb = 1433
+	var user = "DBQlik"
+	var password = "Yfcnhjqrf48"
+	var database = "DBQlik-log-xml"
+	var err error
+	var db *sql.DB
+
+	connString := fmt.Sprintf("server=%s;user id=%s;password=%s;port=%d;database=%s;",
+		server, user, password, portdb, database)
+
+	// Create connection pool
+	db, err = sql.Open("sqlserver", connString)
+	if err != nil {
+		log.Println("Error creating connection pool: ", err.Error())
+		return []byte(""), err
+	}
+
+	defer func() {
+		_ = db.Close()
+	}()
+
+	ctx := context.Background()
+	err = db.PingContext(ctx)
+	if err != nil {
+		log.Println(err.Error())
+		return []byte(""), err
+	}
+
+	fmt.Printf("Connected!\n")
+
+	log.Println(sn)
+
+	answer, err := readsnFromBase(db, sn)
+
+	if err != nil {
+		log.Println(err.Error())
+		return []byte(""), err
+	}
+	return answer, nil
+}
+
+func readsnFromBase(db *sql.DB, sn string) ([]byte, error) {
 	var findsn string
 	var finddate time.Time
 	var exportdate time.Time
@@ -83,7 +124,14 @@ func readsnFromBase(sn string) ([]byte, error) {
 		return []byte("error"), err
 	}
 
-	tsql := fmt.Sprintf("SELECT [sn], [importdate], [exportdate], trim([productname]), trim([customer]), trim([code]), [retaildate], [repairdate] FROM [DBQlik-log-xml].[dbo].[sntable] where sn=@sn;")
+	tsql := "SELECT [sn], " +
+		"[importdate], " +
+		"[exportdate], " +
+		"trim([productname]), " +
+		"trim([customer]), " +
+		"trim([code]), " +
+		"[retaildate], " +
+		"[repairdate] FROM [DBQlik-log-xml].[dbo].[sntable] where sn=@sn;"
 
 	// Execute query
 	rows, err := db.QueryContext(ctx, tsql, sql.Named("sn", sn))
@@ -141,37 +189,4 @@ func readsnFromBase(sn string) ([]byte, error) {
 	retjson, _ := json.Marshal(ret)
 
 	return retjson, nil
-}
-
-func searchIntoBase(sn string) ([]byte, error) {
-
-	connString := fmt.Sprintf("server=%s;user id=%s;password=%s;port=%d;database=%s;",
-		server, user, password, portdb, database)
-
-	// Create connection pool
-	db, err = sql.Open("sqlserver", connString)
-	if err != nil {
-		log.Println("Error creating connection pool: ", err.Error())
-		return []byte(""), err
-	}
-
-	defer db.Close()
-
-	ctx := context.Background()
-	err = db.PingContext(ctx)
-	if err != nil {
-		log.Println(err.Error())
-		return []byte(""), err
-	}
-	fmt.Printf("Connected!\n")
-
-	log.Println(sn)
-
-	answer, err := readsnFromBase(sn)
-
-	if err != nil {
-		log.Println(err.Error())
-		return []byte(""), err
-	}
-	return answer, nil
 }
