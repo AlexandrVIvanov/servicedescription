@@ -1,0 +1,26 @@
+Help comandline arguments run: 
+	servicedescription -p PORT
+2023/07/11 11:26:41 Сomandline arguments run:
+    servicedescription -p PORT"
+    PORT - порт запуска сервиса по умолчанию 8134
+
+Запуск веб-сервера на http://127.0.0.1:8134
+    Сервисы
+		GET:
+		    /description?id=xx,yy - Возвращает страницу с описанием услуг
+                xx,yy - id (int) вида услуги
+            /search?sn=серийный номер
+                - Возвращает json
+                {"Id": SN,
+		         "DateImport": Дата производства}
+		POST:
+		    /writedesription  - Добавление или обновление описания услуги
+                BODY request (json):
+                    {"IdText" : id вида услуги,
+                     "Text": " текст описания услуги закодированые в BASE64 "}
+
+Исходники URL: https://github.com/AlexandrVIvanov/servicedescription
+2023/07/11 11:26:45 127.0.0.1:59572 /search?sn=welcome.txt
+Connected!
+2023/07/11 11:26:45 welcome.txt
+2023/07/11 11:26:45 {"Id":"welcome.txt","DateImport":""}
