@@ -129,14 +129,16 @@ func readsnFromBase(db *sql.DB, sn string) ([]byte, error) {
 		return []byte("error"), err
 	}
 
-	tsql := "SELECT [sn], " +
-		"[importdate], " +
-		"[exportdate], " +
-		"trim([productname]), " +
-		"trim([customer]), " +
-		"trim([code]), " +
-		"[retaildate], " +
-		"[repairdate], [warrantydate] FROM [DBQlik-log-xml].[dbo].[sntable] where sn=@sn;"
+	//tsql := "SELECT [sn], " +
+	//	"[importdate], " +
+	//	"[exportdate], " +
+	//	"trim([productname]), " +
+	//	"trim([customer]), " +
+	//	"trim([code]), " +
+	//	"[retaildate], " +
+	//	"[repairdate], [warrantydate] FROM [DBQlik-log-xml].[dbo].[sntable] where sn=@sn;"
+
+	tsql := "Select \n\ts2.sn sn,\n\ts2.importdate importdate,\n\ts2.exportdate,\n\t isnull(s3.productname,'') productname,\n\t s2.customer,\n\t isnull(s3.productcode,'') productcode,\n\t s2.retaildate,\n\t s2.repairedate,\n\t s2.warrantydate from\n\t(Select \n\t\t@sn as sn, \n\t\tmax(idnom) idnom, \n\t\tisnull(MIN(importdate),\t\t'2001-01-01 00:00:00.000') importdate, \n\t\tisnull(max(exportdate),\t\t'2001-01-01 00:00:00.000') exportdate, \n\t\tisnull(max(retaildate),\t\t'2001-01-01 00:00:00.000') retaildate, \n\t\tisnull(max(warrantydate),\t'2001-01-01 00:00:00.000') warrantydate, \n\t\tisnull(max(repairedate),\t'2001-01-01 00:00:00.000') repairedate, \n\t\tisnull(max(customer),'')\tcustomer from \n\t(\n\t\tSelect idnom as idnom , importdate as importdate, null as exportdate, null as retaildate ,null as warrantydate, null as repairedate, null as customer from [dbo].[sn_importtable] with (NOLOCK) where sn = @sn\n\t\tunion\n\t\tSelect idnom, null, exportdate, null, null, null, null from [dbo].[sn_exporttable] with (NOLOCK) where sn = @sn\n\t\tunion\n\t\tSelect idnom, null, null, [retaildate], [warrantydate], null, customer from [dbo].[sn_retailtable] with (NOLOCK) where sn = @sn\n\t\tunion\n\t\tSelect idnom,  null, null,  null, null, [repairedate], null from [dbo].[sn_repairtable] with (NOLOCK) where sn = @sn\n\t) as s1) as s2\nleft join [dbo].[sn_nom] s3 on (s2.idnom = s3.idnom)\n\n"
 
 	// Execute query
 	rows, err := db.QueryContext(ctx, tsql, sql.Named("sn", sn))
