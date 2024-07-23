@@ -16,9 +16,9 @@ type TypeDescription struct {
 	Text   string
 }
 
-// Description: readLines -
-// в Го файлы читаются в []byte
-// чтобы перевести []bytes->[]string добавил эту функцию
+// Description: readLines - в Го файлы читаются в []byte чтобы перевести
+// []bytes->[]string добавил эту функцию
+
 func ReadLines(path string) ([]string, error) {
 	file, err := os.Open(path)
 	if err != nil {

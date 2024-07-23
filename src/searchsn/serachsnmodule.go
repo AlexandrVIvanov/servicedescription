@@ -42,6 +42,7 @@ func Searchsn(w http.ResponseWriter, r *http.Request) {
 		if err != nil {
 			return
 		}
+
 		return
 
 	} else {
@@ -73,6 +74,7 @@ func searchIntoBase(sn string) ([]byte, error) {
 	defer cancel()
 
 	if err := db.PingContext(ctx); err != nil {
+		_ = db.Close()
 		return []byte(""), err
 	}
 	defer func() {
@@ -213,6 +215,11 @@ func readsnFromBase(db *sql.DB, sn string) ([]byte, error) {
 	ret.WarrantyDate = retDateWarranty
 
 	retjson, _ := json.Marshal(ret)
+
+	err = rows.Close()
+	if err != nil {
+		log.Println("Error close connection: ", err.Error())
+	}
 
 	return retjson, nil
 }
