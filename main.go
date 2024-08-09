@@ -4,6 +4,7 @@ import (
 	"flag"
 	_ "github.com/microsoft/go-mssqldb"
 	"log"
+	"main/src/chatanalize"
 	"main/src/description"
 	"main/src/searchsn"
 	"net/http"
@@ -25,9 +26,6 @@ func init() {
 func main() {
 
 	//println("Help comandline arguments run: \n\tservicedescription -p PORT")
-	go func() {
-		http.ListenAndServe("localhost:8080", nil)
-	}()
 
 	flag.Parse()
 
@@ -40,6 +38,7 @@ func main() {
 	mux.HandleFunc("/description", description.ShowDescription)
 	mux.HandleFunc("/writedesription", description.WriteDescription)
 	mux.HandleFunc("/search", searchsn.Searchsn)
+	mux.HandleFunc("/chatanalize", chatanalize.Chatanalize)
 
 	err := http.ListenAndServe(":"+strport, mux)
 

@@ -26,6 +26,17 @@
                 BODY request (json):
                     {"IdText" : id вида услуги,
                      "Text": " текст описания услуги закодированые в BASE64 "}
+        POST:
+            /chatanalize - Анализ текста сообщения
+                Authorization:
+                    bearer {token}
+                BODY request (json):
+                    {
+                        "Id" : ID сообщения,
+                        "Text": "{Текст сообщения закодированный в BASE64}"
+                    }
+
+
 
 Исходники URL: https://github.com/AlexandrVIvanov/servicedescription
 
