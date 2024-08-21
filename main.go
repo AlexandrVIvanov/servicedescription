@@ -9,6 +9,7 @@ import (
 	"main/src/searchsn"
 	"net/http"
 	_ "net/http/pprof"
+	"os"
 	"path/filepath"
 	"strconv"
 	"strings"
@@ -25,6 +26,20 @@ func init() {
 
 func main() {
 
+	logfilename := filepath.Join("", "servicedescription.log")
+	logFile, err := os.OpenFile(logfilename, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+
+	log.SetOutput(logFile)
+	log.SetFlags(log.LstdFlags | log.Lshortfile)
+
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	defer func() {
+		_ = logFile.Close()
+	}()
+
 	//println("Help comandline arguments run: \n\tservicedescription -p PORT")
 
 	flag.Parse()
@@ -40,7 +55,7 @@ func main() {
 	mux.HandleFunc("/search", searchsn.Searchsn)
 	mux.HandleFunc("/chatanalize", chatanalize.Chatanalize)
 
-	err := http.ListenAndServe(":"+strport, mux)
+	err = http.ListenAndServe(":"+strport, mux)
 
 	log.Fatal(err)
 

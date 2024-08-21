@@ -62,7 +62,7 @@ func GetAnswerGigachat(accesstoken string, Text []byte) (string, error) {
 	var err error
 	var BodyResponse TypeBodyResponse
 
-	firstPrompt := []byte("Эмоциональная оценка текста Положительная или отрицательная: ")
+	firstPrompt := []byte("Эмоциональная оценка текста если Положительная: 1, если отрицательная: 0")
 	firstPrompt = append(firstPrompt, Text...)
 
 	b.Model = "GigaChat"
@@ -98,7 +98,9 @@ func GetAnswerGigachat(accesstoken string, Text []byte) (string, error) {
 		return "", err
 	}
 
-	defer resp.Body.Close()
+	defer func() {
+		_ = resp.Body.Close()
+	}()
 
 	if resp.StatusCode != http.StatusOK {
 		return "", err
@@ -145,7 +147,9 @@ func GetTokenGigachat() (string, error) {
 		return "", err
 	}
 
-	defer resp.Body.Close()
+	defer func() {
+		_ = resp.Body.Close()
+	}()
 
 	if resp.StatusCode != http.StatusOK {
 		return "", nil
@@ -162,9 +166,11 @@ func GetTokenGigachat() (string, error) {
 }
 
 func AnalizeText(Text []byte) (string, error) {
-	var err error = nil
-	var accesstoken string = ""
-	var retString string = ""
+	var (
+		err         error  = nil
+		accesstoken string = ""
+		retString   string = ""
+	)
 
 	accesstoken, err = GetTokenGigachat()
 	if err != nil {
@@ -209,15 +215,14 @@ func Chatanalize(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		//id := d.id
 		text, err := base64.StdEncoding.DecodeString(d.Text)
-
 		if err != nil {
 			msg := "Error Decode Base64 field test"
 			http.Error(w, msg, http.StatusBadRequest)
 			log.Println("Error", err.Error())
 			return
 		}
+
 		retString, err := AnalizeText(text)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -238,8 +243,11 @@ func Chatanalize(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
+		log.Println("Request:", string(text), ", Answer:", retString)
+
 	} else {
 		http.Error(w, "Bad request", http.StatusBadRequest)
 		return
 	}
+
 }
