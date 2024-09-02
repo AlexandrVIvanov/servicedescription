@@ -36,7 +36,4 @@
                         "Text": "{Текст сообщения закодированный в BASE64}"
                     }
 
-
-
 Исходники URL: https://github.com/AlexandrVIvanov/servicedescription
-

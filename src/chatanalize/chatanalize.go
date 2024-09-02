@@ -13,6 +13,7 @@ type TypeIncomingText struct {
 	Id   string `json:"Id"`
 	Text string `json:"Text"`
 }
+
 type Response struct {
 	Answer string `json:"Answer"`
 }
@@ -165,7 +166,7 @@ func GetTokenGigachat() (string, error) {
 	return d.AccessToken, err
 }
 
-func AnalizeText(Text []byte) (string, error) {
+func AnalyzeText(Text []byte) (string, error) {
 	var (
 		err         error  = nil
 		accesstoken string = ""
@@ -223,7 +224,7 @@ func Chatanalize(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		retString, err := AnalizeText(text)
+		retString, err := AnalyzeText(text)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return

@@ -8,7 +8,6 @@ import (
 	"main/src/description"
 	"main/src/searchsn"
 	"net/http"
-	_ "net/http/pprof"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -27,6 +26,7 @@ func init() {
 func main() {
 
 	logfilename := filepath.Join("", "servicedescription.log")
+
 	logFile, err := os.OpenFile(logfilename, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 
 	log.SetOutput(logFile)
@@ -40,8 +40,6 @@ func main() {
 		_ = logFile.Close()
 	}()
 
-	//println("Help comandline arguments run: \n\tservicedescription -p PORT")
-
 	flag.Parse()
 
 	strport := strconv.Itoa(*port)
@@ -54,6 +52,9 @@ func main() {
 	mux.HandleFunc("/writedesription", description.WriteDescription)
 	mux.HandleFunc("/search", searchsn.Searchsn)
 	mux.HandleFunc("/chatanalize", chatanalize.Chatanalize)
+
+	// TODO Проверить утечку памяти
+	// FIXME Память куда то утекает
 
 	err = http.ListenAndServe(":"+strport, mux)
 

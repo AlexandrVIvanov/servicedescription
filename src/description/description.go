@@ -41,10 +41,13 @@ func ReadLines(path string) ([]string, error) {
 }
 
 // Обработчик для отображения содержимого заметки.
+// Description: showDescription - отображает содержимое заметки
+
 func ShowDescription(w http.ResponseWriter, r *http.Request) {
 	// Извлекаем значение параметра id из URL и попытаемся
 	// конвертировать строку в integer используя функцию strconv.Atoi(). Если его нельзя
 	// конвертировать в integer, или значение меньше 1, возвращаем ответ
+
 	var outputstrings []string
 	var outputbyte []byte
 	var template1, template2 []string
