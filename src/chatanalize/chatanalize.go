@@ -27,14 +27,14 @@ func GetAnswerGigachat(accesstoken string, Text []byte) (string, error) {
 	}
 
 	type TypeBodyRequest struct {
-		Model              string              `json:"model"`
-		Temperature        float32             `json:"temperature"`
-		N                  int                 `json:"n"`
-		MaxTokens          int                 `json:"max_tokens"`
-		Stream             bool                `json:"stream"`
-		Updateinterval     int                 `json:"update_interval"`
-		Repetition_penalty float32             `json:"repetition_penalty"`
-		Messages           [2]TypeIncomingText `json:"messages"`
+		Model             string              `json:"model"`
+		Temperature       float32             `json:"temperature"`
+		N                 int                 `json:"n"`
+		MaxTokens         int                 `json:"max_tokens"`
+		Stream            bool                `json:"stream"`
+		Updateinterval    int                 `json:"update_interval"`
+		RepetitionPenalty float32             `json:"repetition_penalty"`
+		Messages          [2]TypeIncomingText `json:"messages"`
 	}
 
 	type TypeIncomingChoice struct {
@@ -71,7 +71,7 @@ func GetAnswerGigachat(accesstoken string, Text []byte) (string, error) {
 	b.Stream = false
 	b.N = 1
 	b.Updateinterval = 0
-	b.Repetition_penalty = 1.07
+	b.RepetitionPenalty = 1.07
 
 	b.Messages[0].Role = "system"
 	b.Messages[0].Content = "Отвечай одним словом"
