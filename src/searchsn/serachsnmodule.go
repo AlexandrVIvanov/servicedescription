@@ -82,8 +82,6 @@ func searchIntoBase(sn string) ([]byte, error) {
 		cancel()
 	}()
 
-	//fmt.Printf("Connected!\n")
-
 	log.Println(sn)
 
 	answer, err := readsnFromBase(db, sn)
