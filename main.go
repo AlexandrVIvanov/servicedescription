@@ -4,6 +4,7 @@ import (
 	"flag"
 	_ "github.com/microsoft/go-mssqldb"
 	"log"
+	"main/src/certificates"
 	"main/src/chatanalize"
 	"main/src/description"
 	"main/src/searchsn"
@@ -52,6 +53,7 @@ func main() {
 	mux.HandleFunc("/writedesription", description.WriteDescription)
 	mux.HandleFunc("/search", searchsn.Searchsn)
 	mux.HandleFunc("/chatanalize", chatanalize.Chatanalize)
+	mux.HandleFunc("/certificates/add", certificates.CertificateAdd)
 
 	// TODO Проверить утечку памяти
 	// FIXME Память куда то утекает

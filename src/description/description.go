@@ -151,8 +151,10 @@ func WriteDescription(w http.ResponseWriter, r *http.Request) {
 		WriteDescriptionFile(id, text)
 
 	} else {
+
 		http.Error(w, "Bad request", http.StatusBadRequest)
 		return
+
 	}
 
 }
