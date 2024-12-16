@@ -1,0 +1,5 @@
+servername : app01
+sqlusername: DBQlik
+sqlpassword: Yfcnhjqrf48
+sqlport: 1433
+sqldatabase: DBQlik-log-xml

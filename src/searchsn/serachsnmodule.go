@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"main/src/readconfig"
 	"net/http"
 	"strings"
 	"time"
@@ -52,13 +53,21 @@ func Searchsn(w http.ResponseWriter, r *http.Request) {
 }
 
 func searchIntoBase(sn string) ([]byte, error) {
-	var server = "app01"
-	var portdb = 1433
-	var user = "DBQlik"
-	var password = "Yfcnhjqrf48"
-	var database = "DBQlik-log-xml"
 	var err error
 	var db *sql.DB
+
+	var conf *readconfig.TypeSqlConfiguration
+
+	conf, err = readconfig.Getconfigsqlserver()
+
+	if err != nil {
+		return []byte(""), err
+	}
+	server := conf.ServerName
+	portdb := conf.Port
+	user := conf.UserName
+	password := conf.Password
+	database := conf.Database
 
 	connString := fmt.Sprintf("server=%s;user id=%s;password=%s;port=%d;database=%s;",
 		server, user, password, portdb, database)
@@ -71,10 +80,14 @@ func searchIntoBase(sn string) ([]byte, error) {
 	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
+	defer func() {
+		conf = nil
+		cancel()
+	}()
 
 	if err := db.PingContext(ctx); err != nil {
 		_ = db.Close()
+		conf = nil
 		return []byte(""), err
 	}
 	defer func() {
