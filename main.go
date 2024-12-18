@@ -54,6 +54,7 @@ func main() {
 	mux.HandleFunc("/search", searchsn.Searchsn)
 	mux.HandleFunc("/chatanalize", chatanalize.Chatanalize)
 	mux.HandleFunc("/certificates/add", certificates.CertificateAdd)
+	mux.HandleFunc("/certificates/status", certificates.CertificateGetStatus)
 
 	// TODO Проверить утечку памяти
 	// FIXME Память куда то утекает

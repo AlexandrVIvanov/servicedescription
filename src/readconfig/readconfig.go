@@ -20,6 +20,10 @@ type TypeHTTPclientConnectionConfig struct {
 	URLPath       string `yaml:"urlpath"`
 }
 
+type TypeSecretkey struct {
+	Secretkey string `yaml:"secretkey"`
+}
+
 func Getconfigsqlserver() (*TypeSqlConfiguration, error) {
 
 	var c TypeSqlConfiguration
@@ -51,9 +55,29 @@ func Getconfighttpclient() (*TypeHTTPclientConnectionConfig, error) {
 	}
 	err = yaml.Unmarshal(yamlFile, &c)
 	if err != nil {
-		log.Printf("Unmarshal config sql server: %v", err)
+		log.Printf("Unmarshal config http client: %v", err)
 		return nil, err
 	}
 
 	return &c, nil
+}
+
+func Getconfigsecretkey() (*TypeSecretkey, error) {
+
+	var c TypeSecretkey
+
+	conffile := filepath.Join("conf", "secretkey.yaml")
+	yamlFile, err := os.ReadFile(conffile)
+	if err != nil {
+		log.Printf("yamlFile.Get err   #%v ", err)
+		return nil, err
+	}
+	err = yaml.Unmarshal(yamlFile, &c)
+	if err != nil {
+		log.Printf("Unmarshal config secretkey: %v", err)
+		return nil, err
+	}
+
+	return &c, nil
+
 }

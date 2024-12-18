@@ -22,6 +22,7 @@ import (
 	"log"
 	"main/src/readconfig"
 	"net/http"
+	"sync"
 	"time"
 )
 
@@ -47,17 +48,26 @@ type TypeAddCertificates struct {
 // функция keyTruth проверки корректности X-API-Authorization
 func keyTruth(msg []byte, key string) (bool, error) {
 
-	secret := "zwtvl-v^))%tcw#&p(a%jax4rt%dg!qpw9c6wo+ljc$j32#v1d"
+	conf, err := readconfig.Getconfigsecretkey()
+	if err != nil || conf == nil {
+		return false, errors.New("invalid key")
+	}
+
+	secret := conf.Secretkey
 
 	h := hmac.New(md5.New, []byte(secret))
 	h.Write(msg)
 	signature := hex.EncodeToString(h.Sum(nil))
 
-	if signature == key {
-		return true, nil
-	} else {
+	if signature != key {
 		return false, errors.New("invalid key")
 	}
+
+	defer func() {
+		conf = nil
+	}()
+
+	return true, nil
 }
 
 // insertpaycheck в базу данных
@@ -76,7 +86,8 @@ func Insertpaycheck(db *sql.DB,
 		return err
 	}
 
-	tsql := "INSERT INTO [dbo].[cert_paytable] ([payuuid] ,[paytimestamp] ,[paysendtel] ,[paysendemail]) VALUES ( @p1, @p2, @p3, @p4)"
+	tsql := `INSERT INTO [dbo].[cert_paytable] ([payuuid] ,[paytimestamp] ,[paysendtel] ,[paysendemail]) 
+			VALUES ( @p1, @p2, @p3, @p4)`
 
 	_, err = db.ExecContext(ctx, tsql,
 		sql.Named("p1", payuuid),
@@ -152,6 +163,7 @@ func CertificateAddDB(d TypeAddCertificates) error {
 	err = db.PingContext(ctx)
 
 	if err != nil {
+		cancel()
 		return err
 	}
 
@@ -190,7 +202,7 @@ func CertificateAddDB(d TypeAddCertificates) error {
 }
 
 // CertificateAddHttp Функция записи сертификата через http
-func CertificateAddHttp(bodytext []byte) error {
+func CertificateAddHttp(bodytext []byte, wg *sync.WaitGroup) error {
 
 	conf, err := readconfig.Getconfighttpclient()
 
@@ -207,6 +219,9 @@ func CertificateAddHttp(bodytext []byte) error {
 	}
 
 	defer func() {
+
+		wg.Done()
+
 		if resp != nil && resp.Body != nil {
 			_ = resp.Body.Close()
 		}
@@ -220,6 +235,7 @@ func CertificateAddHttp(bodytext []byte) error {
 func CertificateAdd(w http.ResponseWriter, r *http.Request) {
 
 	var d TypeAddCertificates
+	var wg sync.WaitGroup
 
 	defer func() {
 		_ = r.Body.Close()
@@ -264,7 +280,8 @@ func CertificateAdd(w http.ResponseWriter, r *http.Request) {
 		}
 
 		go func() {
-			err := CertificateAddHttp(bodyjson)
+			wg.Add(1)
+			err := CertificateAddHttp(bodyjson, &wg)
 			if err != nil {
 
 			}
@@ -280,10 +297,50 @@ func CertificateAdd(w http.ResponseWriter, r *http.Request) {
 
 		log.Println(r.RemoteAddr, r.RequestURI)
 
+		wg.Wait() // ожидаем завершения запросов
+
 	} else {
 
 		http.Error(w, "Bad request", http.StatusBadRequest)
 		return
+
+	}
+}
+
+// CertificateGetStatus Функция возвращает статус сертификата
+func CertificateGetStatus(w http.ResponseWriter, r *http.Request) {
+
+	// читаем параметры ?cert=
+	// проверяем X-API-Authorization и если не верно отправляем http ошибку
+
+	if r.Method == "GET" {
+
+		cert := r.URL.Query().Get("cert")
+		if cert == "" {
+
+			http.Error(w, "Bad request", http.StatusBadRequest)
+			return
+
+		}
+
+		// Проверяем X-API-Authorization
+		xapikey := r.Header.Get("X-API-Authorization")
+
+		if xapikey == "" {
+			http.Error(w, "Unauthorized", http.StatusUnauthorized)
+			return
+		} // проверяем на заполненность ключа X-API-Authorization
+
+		valid, err := keyTruth([]byte(cert), xapikey)
+
+		if err != nil || !valid {
+			http.Error(w, "Unauthorized", http.StatusUnauthorized)
+			return
+		} // проверяем валидность
+
+	} else {
+
+		http.Error(w, "Bad request", http.StatusBadRequest)
 
 	}
 }
