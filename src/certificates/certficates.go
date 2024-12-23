@@ -39,6 +39,7 @@ type TypeAddCertificate struct {
 	Paytimestamp string            `json:"paytimestamp"`
 	Paysendtel   string            `json:"paysendtel"`
 	Paysendemail string            `json:"paysendemail"`
+	Payordernum  string            `json:"payordernum"`
 	Certs        []TypeCertificate `json:"certs"`
 }
 type TypeAddCertificates struct {
@@ -76,7 +77,8 @@ func Insertpaycheck(db *sql.DB,
 	payuuid string,
 	paytimestamp string,
 	paysendtel string,
-	paysendemail string) error {
+	paysendemail string,
+	payordernum string) error {
 
 	ctx := context.Background()
 
@@ -86,14 +88,16 @@ func Insertpaycheck(db *sql.DB,
 		return err
 	}
 
-	tsql := `INSERT INTO [dbo].[cert_paytable] ([payuuid] ,[paytimestamp] ,[paysendtel] ,[paysendemail]) 
-			VALUES ( @p1, @p2, @p3, @p4)`
+	tsql := `INSERT INTO [dbo].[cert_paytable] ([payuuid] ,[paytimestamp] ,[paysendtel] ,[paysendemail], [payordernum]) 
+			VALUES ( @p1, @p2, @p3, @p4, @p5)`
 
 	_, err = db.ExecContext(ctx, tsql,
 		sql.Named("p1", payuuid),
 		sql.Named("p2", paytimestamp),
 		sql.Named("p3", paysendtel),
-		sql.Named("p4", paysendemail))
+		sql.Named("p4", paysendemail),
+		sql.Named("p5", payordernum),
+	)
 
 	if err != nil {
 		return err
@@ -179,8 +183,9 @@ func CertificateAddDB(d TypeAddCertificates) error {
 		paytimestamp := certificate.Paytimestamp
 		paysendtel := certificate.Paysendtel
 		paysendemail := certificate.Paysendemail
+		payordernum := certificate.Payordernum
 
-		err = Insertpaycheck(db, payuuid, paytimestamp, paysendtel, paysendemail)
+		err = Insertpaycheck(db, payuuid, paytimestamp, paysendtel, paysendemail, payordernum)
 		if err != nil {
 			return err
 		}
@@ -230,8 +235,51 @@ func CertificateAddHttp(bodytext []byte, wg *sync.WaitGroup) error {
 	return nil
 }
 
-// функция CertificateAdd добавления сертификата
+func CertificateRegisterNew1c(bodytext []byte, wg *sync.WaitGroup) error {
 
+	conf, err := readconfig.GetconfigServer1c()
+	if err != nil {
+		return err
+	}
+
+	urlserver := conf.Сertificateserver1c
+	urlpath := conf.Certificatepath1cservicenew
+	Token := conf.Сertificateserver1ctoken
+
+	// Устанавливаем в заголовке bearer token и делаем POST запрос
+	client := &http.Client{}
+
+	request, err := http.NewRequest("POST", urlserver+urlpath, bytes.NewBuffer(bodytext))
+	if err != nil {
+		log.Println("Error creating http client: ", err.Error())
+		return err
+	}
+
+	request.Header.Set("Content-Type", "application/json")
+	request.Header.Set("Authorization", "Bearer "+Token)
+
+	resp, err := client.Do(request)
+	if err != nil {
+		log.Println("Error response http client: ", err.Error())
+		return err
+	}
+
+	defer func() {
+
+		wg.Done()
+
+		conf = nil
+
+		if resp != nil && resp.Body != nil {
+			_ = resp.Body.Close()
+		}
+		request = nil
+	}()
+
+	return nil
+}
+
+// CertificateAdd функция добавления сертификата
 func CertificateAdd(w http.ResponseWriter, r *http.Request) {
 
 	var d TypeAddCertificates
@@ -275,7 +323,8 @@ func CertificateAdd(w http.ResponseWriter, r *http.Request) {
 		err = decoder.Decode(&d)
 
 		if err != nil {
-			log.Println("Error decoding JSON", string(bodyjson))
+			log.Println("Error decoding JSON", err.Error(), string(bodyjson))
+			http.Error(w, "Error decoding JSON "+err.Error(), http.StatusInternalServerError)
 			return
 		}
 
@@ -283,7 +332,15 @@ func CertificateAdd(w http.ResponseWriter, r *http.Request) {
 			wg.Add(1)
 			err := CertificateAddHttp(bodyjson, &wg)
 			if err != nil {
+				log.Println(err.Error())
+			}
+		}()
 
+		go func() {
+			wg.Add(1)
+			err := CertificateRegisterNew1c(bodyjson, &wg)
+			if err != nil {
+				log.Println(err.Error())
 			}
 		}()
 
