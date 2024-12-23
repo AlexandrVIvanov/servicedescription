@@ -259,9 +259,15 @@ func CertificateRegisterNew1c(bodytext []byte, wg *sync.WaitGroup) error {
 	request.Header.Set("Authorization", "Bearer "+Token)
 
 	resp, err := client.Do(request)
+
 	if err != nil {
 		log.Println("Error response http client: ", err.Error())
 		return err
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		log.Println("Error response http client: ", resp.StatusCode, resp.Status)
+		return errors.New("error response http client")
 	}
 
 	defer func() {

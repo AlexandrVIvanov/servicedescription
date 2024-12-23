@@ -21,3 +21,8 @@ BODY request (json):
 
 Исходники URL: https://github.com/AlexandrVIvanov/servicedescription
 
+
+ВАЖНО!!!!!
+Обратить внимание на подключение к рабочей базе!!!
+
+
