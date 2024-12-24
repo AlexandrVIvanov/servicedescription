@@ -34,6 +34,7 @@ func main() {
 	log.SetFlags(log.LstdFlags | log.Lshortfile)
 
 	if err != nil {
+
 		log.Fatal(err)
 	}
 
