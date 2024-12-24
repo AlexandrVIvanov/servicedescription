@@ -1,10 +1,8 @@
 package certificates
 
 /*
- TODO Добавить функцию создания сертификата
- TODO добавить функцию авторизации,
  TODO добавить функцию разрешенных ip адресов
-
+ TODO Добавить функцию данных о статусе сертификатов
 */
 
 import (
@@ -235,6 +233,59 @@ func CertificateAddHttp(bodytext []byte, wg *sync.WaitGroup) error {
 	return nil
 }
 
+func GetstatusFrom1c(uidcert string) (string, error) {
+
+	conf, err := readconfig.GetconfigServer1c()
+	if err != nil {
+		return "", err
+	}
+
+	urlserver := conf.Сertificateserver1c
+	urlpath := conf.Сertificatepath1cservicestatus + "/" + uidcert
+	Token := conf.Сertificateserver1ctoken
+
+	// Устанавливаем в заголовке bearer token и делаем POST запрос
+	client := &http.Client{}
+
+	request, err := http.NewRequest("GET", urlserver+urlpath, nil)
+	if err != nil {
+		log.Println("Error creating http client: ", err.Error())
+		return "", err
+	}
+
+	request.Header.Set("Content-Type", "application/json")
+	request.Header.Set("Authorization", "Bearer "+Token)
+
+	resp, err := client.Do(request)
+
+	if err != nil {
+		log.Println("Error response http client: ", err.Error())
+		return "", err
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		log.Println("Error response http client: ", resp.StatusCode, resp.Status)
+		return "", errors.New("error response http client")
+	}
+
+	defer func() {
+
+		conf = nil
+
+		if resp != nil && resp.Body != nil {
+			_ = resp.Body.Close()
+		}
+		request = nil
+	}()
+
+	//прочитать resp.body и преобразовать в string
+
+	BodyBytes, _ := io.ReadAll(resp.Body)
+
+	return string(BodyBytes), nil
+
+}
+
 func CertificateRegisterNew1c(bodytext []byte, wg *sync.WaitGroup) error {
 
 	conf, err := readconfig.GetconfigServer1c()
@@ -400,6 +451,31 @@ func CertificateGetStatus(w http.ResponseWriter, r *http.Request) {
 			http.Error(w, "Unauthorized", http.StatusUnauthorized)
 			return
 		} // проверяем валидность
+
+		BodyString, err := GetstatusFrom1c(cert)
+		if err != nil || BodyString == "" {
+			http.Error(w, "Bad request", http.StatusBadRequest)
+			return
+		}
+
+		w.WriteHeader(http.StatusOK)
+		w.Header().Set("Content-Type", "application/json")
+		_, err = w.Write([]byte(BodyString))
+		if err != nil {
+			return
+		}
+
+		return
+
+	} else {
+
+		http.Error(w, "Bad request", http.StatusBadRequest)
+
+	}
+}
+
+func CertificatePing(w http.ResponseWriter, r *http.Request) {
+	if r.Method == "GET" {
 
 	} else {
 
